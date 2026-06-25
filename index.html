@@ -62,6 +62,18 @@
     .model-desc { font-size: 12px; color: #777; margin-top: 6px; line-height: 1.6; }
     .model-desc span { display: block; padding: 2px 0; }
 
+    /* タイムコード説明ボックス */
+    .timecode-notice {
+      background: #f0f4ff;
+      border: 1px solid #c5d3f0;
+      border-radius: 6px;
+      padding: 10px 14px;
+      font-size: 12px;
+      color: #3a4a7a;
+      margin-top: 8px;
+      line-height: 1.6;
+    }
+
     /* コスト目安 */
     .cost-box {
       background: #f9f9f9;
@@ -131,6 +143,25 @@
     }
     .result-summary { font-size: 12px; color: #666; margin-bottom: 10px; }
 
+    /* タイムコード方式表示 */
+    .timecode-result-notice {
+      border-radius: 6px;
+      padding: 10px 14px;
+      font-size: 12px;
+      margin-bottom: 12px;
+      line-height: 1.6;
+    }
+    .timecode-result-notice.segment {
+      background: #f0fff0;
+      border: 1px solid #a8d8a8;
+      color: #2c5f2c;
+    }
+    .timecode-result-notice.chunk {
+      background: #fff8e1;
+      border: 1px solid #f0c040;
+      color: #7a5c00;
+    }
+
     /* エラー */
     .error-box {
       display: none; background: #fff5f5; border: 1px solid #f5c6cb;
@@ -156,10 +187,6 @@
 
 <div class="container">
 
-  <!-- ============================================================
-    ⚠️ 重要：ここにRenderのURLを入れてください
-    デプロイ後、index.htmlのこの部分を書き換えてNetlifyに反映させます。
-    ============================================================ -->
   <script>
     // ▼▼▼ ここを自分のRenderのURLに書き換えてください ▼▼▼
     const API_URL = "https://transcriber-backend-erik.onrender.com/api/transcribe";
@@ -187,14 +214,29 @@
     <div class="form-row">
       <label for="modelSelect">文字起こしモデル</label>
       <select id="modelSelect">
-        <option value="gpt-4o-mini-transcribe" selected>gpt-4o-mini-transcribe（低コスト・通常使用向け）</option>
-        <option value="gpt-4o-transcribe">gpt-4o-transcribe（高精度・コスト高め）</option>
-        <option value="whisper-1">whisper-1（タイムコード精度重視）</option>
+        <option value="whisper-1" selected>whisper-1（正確なタイムコード優先・推奨）</option>
+        <option value="gpt-4o-mini-transcribe">gpt-4o-mini-transcribe（低コスト・タイムコードはチャンク単位の目安）</option>
+        <option value="gpt-4o-transcribe">gpt-4o-transcribe（高精度文字起こし・タイムコードはチャンク単位の目安）</option>
       </select>
       <div class="model-desc">
-        <span>・<strong>gpt-4o-mini-transcribe</strong>：低コスト・日本語文字起こし用。タイムコードは推定（チャンク開始時刻のみ）。</span>
-        <span>・<strong>gpt-4o-transcribe</strong>：高精度文字起こし用。タイムコードは推定（チャンク開始時刻のみ）。</span>
-        <span>・<strong>whisper-1</strong>：タイムコード確認用。セグメント単位の正確な位置確認を重視する場合に推奨。</span>
+        <span>・<strong>whisper-1</strong>：発話セグメント単位の正確なタイムコードを取得できます。音声内の該当箇所確認に最も使いやすい形式です。</span>
+        <span>・<strong>gpt-4o-mini-transcribe</strong>：低コストで日本語文字起こし向け。発話セグメント単位のタイムコードは取得できないため、タイムコードはチャンク開始時刻の目安になります。</span>
+        <span>・<strong>gpt-4o-transcribe</strong>：高精度文字起こし向け。発話セグメント単位のタイムコードは取得できないため、タイムコードはチャンク開始時刻の目安になります。</span>
+      </div>
+      <div class="timecode-notice">
+        ℹ️ 正確なタイムコードが必要な場合は <strong>whisper-1</strong> を使用してください。gpt-4o系モデルでは発話セグメント単位のタイムコードは取得できないため、タイムコードは目安になります。
+      </div>
+    </div>
+
+    <div class="form-row">
+      <label for="timecodeModeSelect">タイムコード方式</label>
+      <select id="timecodeModeSelect">
+        <option value="segment" selected>発話セグメント単位（whisper-1推奨）</option>
+        <option value="chunk">チャンク単位のみ</option>
+      </select>
+      <div class="model-desc">
+        <span>・<strong>発話セグメント単位</strong>：whisper-1 使用時のみ有効。発話ごとの正確なタイムコードを付与します。</span>
+        <span>・<strong>チャンク単位のみ</strong>：すべてのモデルで共通。分割チャンクの開始時刻のみをタイムコードとして付与します。</span>
       </div>
     </div>
 
@@ -244,6 +286,7 @@
   <div class="card result-box" id="resultBox">
     <h2>📄 文字起こし結果</h2>
     <div class="result-summary" id="resultSummary"></div>
+    <div class="timecode-result-notice" id="timecodeResultNotice" style="display:none"></div>
     <div class="result-actions">
       <button class="btn-action primary" id="copyBtn">📋 全文コピー</button>
       <button class="btn-action" id="downloadBtn">💾 txtで保存</button>
@@ -263,6 +306,7 @@ const audioFile   = document.getElementById('audioFile');
 const fileInfo    = document.getElementById('fileInfo');
 const costBox     = document.getElementById('costBox');
 const modelSelect = document.getElementById('modelSelect');
+const timecodeModeSelect = document.getElementById('timecodeModeSelect');
 const chunkSelect = document.getElementById('chunkSelect');
 const startBtn    = document.getElementById('startBtn');
 const progressBox = document.getElementById('progressBox');
@@ -273,6 +317,7 @@ const errorMessage = document.getElementById('errorMessage');
 const errorDetails = document.getElementById('errorDetails');
 const resultBox   = document.getElementById('resultBox');
 const resultSummary = document.getElementById('resultSummary');
+const timecodeResultNotice = document.getElementById('timecodeResultNotice');
 const resultText  = document.getElementById('resultText');
 const copyBtn     = document.getElementById('copyBtn');
 const downloadBtn = document.getElementById('downloadBtn');
@@ -287,7 +332,6 @@ function formatSize(bytes) {
 
 // 推定音声時間（ビットレートから概算）
 function estimateDuration(bytes) {
-  // mp3 128kbpsで概算：実際はファイルにより異なる
   const assumedBitsPerSec = 128 * 1024;
   const sec = Math.floor((bytes * 8) / assumedBitsPerSec);
   const m = Math.floor(sec / 60);
@@ -304,7 +348,7 @@ function estimateCost(bytes, model) {
     'gpt-4o-transcribe': 0.006,
     'whisper-1': 0.006,
   };
-  const rate = rates[model] || 0.003;
+  const rate = rates[model] || 0.006;
   const usd = minutes * rate;
   const jpy = Math.ceil(usd * 150);
   return `約$${usd.toFixed(3)}（約¥${jpy}）`;
@@ -386,12 +430,24 @@ function showError(msg, details) {
   errorDetails.textContent = details || '';
 }
 
+// タイムコード方式の結果ノーティスを表示
+function showTimecodeResultNotice(model, mode) {
+  const isGpt4o = model === 'gpt-4o-mini-transcribe' || model === 'gpt-4o-transcribe';
+  if (!isGpt4o && mode === 'segment') {
+    timecodeResultNotice.className = 'timecode-result-notice segment';
+    timecodeResultNotice.innerHTML = `✅ <strong>whisper-1 の発話セグメントタイムスタンプを使用しています。</strong>完全なフレーム精度ではありませんが、音声内の該当箇所確認に使いやすい形式です。`;
+  } else {
+    timecodeResultNotice.className = 'timecode-result-notice chunk';
+    timecodeResultNotice.innerHTML = `⚠️ <strong>このモデルでは発話セグメントタイムスタンプを取得できないため、タイムコードはチャンク開始時刻のみです。</strong>正確な位置確認には whisper-1 をご利用ください。`;
+  }
+  timecodeResultNotice.style.display = 'block';
+}
+
 // 実行
 startBtn.addEventListener('click', async () => {
   const file = audioFile.files[0];
   if (!file) { showError('ファイルを選択してください。'); return; }
 
-  // APIのURL確認
   if (API_URL.includes('ここにRenderのURL')) {
     showError(
       'RenderのURLがまだ設定されていません。',
@@ -403,24 +459,25 @@ startBtn.addEventListener('click', async () => {
   // リセット
   errorBox.className = 'error-box';
   resultBox.className = 'card result-box';
+  timecodeResultNotice.style.display = 'none';
   chunkLog.innerHTML = '';
   progressBox.className = 'card progress-box show';
   startBtn.disabled = true;
   startBtn.textContent = '処理中...';
 
-  // ステップ1：アップロード
   setStep(1);
+
+  const selectedModel = modelSelect.value;
+  const selectedTimecodeMode = timecodeModeSelect.value;
 
   try {
     const formData = new FormData();
     formData.append('audioFile', file);
-    formData.append('model', modelSelect.value);
+    formData.append('model', selectedModel);
     formData.append('chunkMinutes', chunkSelect.value);
+    formData.append('timecodeMode', selectedTimecodeMode);
 
-    // ステップ2へ（実際にはサーバーが分割するので表示だけ変える）
     setStep(2);
-
-    // ステップ3
     setTimeout(() => setStep(3), 2000);
 
     const response = await fetch(API_URL, {
@@ -428,7 +485,6 @@ startBtn.addEventListener('click', async () => {
       body: formData,
     });
 
-    // レスポンスをまずテキストで受ける（空レスポンス・HTML応答対策）
     const rawText = await response.text();
 
     if (!rawText || rawText.trim() === '') {
@@ -447,15 +503,15 @@ startBtn.addEventListener('click', async () => {
       return;
     }
 
-    // ステップ4：完了
     setStep(4);
 
-    // チャンクバッジを表示
     if (data.chunks && data.chunks.length > 0) {
       data.chunks.forEach(c => updateChunkBadge(c.index, data.totalChunks, c.status));
     }
 
-    // 結果表示
+    // タイムコード方式の表示
+    showTimecodeResultNotice(data.model, data.timecodeMode);
+
     resultBox.className = 'card result-box show';
     resultText.value = data.text || '';
     resultSummary.textContent = `✅ 完了 - ${data.totalChunks}チャンク中${data.completedChunks}件成功（モデル：${data.model}）${data.failedChunks > 0 ? ` / ⚠️ ${data.failedChunks}件失敗` : ''}`;
