@@ -17,11 +17,12 @@
 [functions."transcribe"]
   # タイムアウト設定（秒）
   # 注意：Netlify無料プランの上限は10秒。有料プランは最大26秒。
-  # 26秒を超える処理が必要な場合は Background Functions への移行を検討すること。
+  # 自動分割モードではチャンクを1つずつ送るため、1チャンクあたり26秒以内に完了する必要があります。
+  # 90秒チャンクでも環境によってタイムアウトする場合があります。失敗する場合は60秒に変更してください。
   timeout = 26
 
 [[headers]]
-  for = "/netlify/functions/*"
+  for = "/.netlify/functions/*"
   [headers.values]
     Access-Control-Allow-Origin = "*"
     Access-Control-Allow-Methods = "POST, OPTIONS"

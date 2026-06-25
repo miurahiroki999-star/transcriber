@@ -139,21 +139,9 @@
       height: 100%;
     }
 
-    .file-area .icon {
-      font-size: 28px;
-      margin-bottom: 6px;
-    }
-
-    .file-area .msg {
-      font-size: 14px;
-      color: var(--text-sub);
-    }
-
-    .file-area .sub {
-      font-size: 12px;
-      color: var(--text-mute);
-      margin-top: 4px;
-    }
+    .file-area .icon { font-size: 28px; margin-bottom: 6px; }
+    .file-area .msg  { font-size: 14px; color: var(--text-sub); }
+    .file-area .sub  { font-size: 12px; color: var(--text-mute); margin-top: 4px; }
 
     #file-selected {
       margin-top: 10px;
@@ -224,6 +212,97 @@
     }
 
     /* ============================================================
+       自動分割モードUI
+    ============================================================ */
+    .split-mode-box {
+      background: var(--accent-lite);
+      border: 1px solid #b8cef0;
+      border-radius: var(--radius);
+      padding: 16px 18px;
+      margin-top: 18px;
+    }
+
+    .split-mode-toggle {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      cursor: pointer;
+      user-select: none;
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--accent);
+    }
+
+    /* トグルスイッチ */
+    .toggle-switch {
+      position: relative;
+      width: 42px;
+      height: 24px;
+      flex-shrink: 0;
+    }
+
+    .toggle-switch input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+      position: absolute;
+    }
+
+    .toggle-track {
+      position: absolute;
+      inset: 0;
+      background: var(--border-dark);
+      border-radius: 24px;
+      transition: background .2s;
+      cursor: pointer;
+    }
+
+    .toggle-track::after {
+      content: '';
+      position: absolute;
+      top: 3px;
+      left: 3px;
+      width: 18px;
+      height: 18px;
+      background: #fff;
+      border-radius: 50%;
+      transition: transform .2s;
+    }
+
+    .toggle-switch input:checked + .toggle-track {
+      background: var(--accent);
+    }
+
+    .toggle-switch input:checked + .toggle-track::after {
+      transform: translateX(18px);
+    }
+
+    .split-options {
+      margin-top: 14px;
+      padding-top: 14px;
+      border-top: 1px solid #b8cef0;
+    }
+
+    .split-options label {
+      font-size: 13px;
+      color: var(--accent);
+      margin-bottom: 8px;
+    }
+
+    .chunk-size-select {
+      width: auto;
+      min-width: 160px;
+      font-size: 13px;
+    }
+
+    .split-tip {
+      font-size: 12px;
+      color: var(--text-sub);
+      margin-top: 8px;
+      line-height: 1.5;
+    }
+
+    /* ============================================================
        ボタン
     ============================================================ */
     .btn {
@@ -269,6 +348,13 @@
 
     .btn-success:hover:not(:disabled) { background: #15622f; }
 
+    .btn-danger {
+      background: var(--error);
+      color: #fff;
+    }
+
+    .btn-danger:hover:not(:disabled) { background: #8b1515; }
+
     /* ============================================================
        処理中インジケーター
     ============================================================ */
@@ -280,6 +366,7 @@
       border-radius: var(--radius);
       font-size: 14px;
       color: var(--warn);
+      margin-bottom: 12px;
     }
 
     #loading .spinner {
@@ -302,6 +389,56 @@
       color: var(--warn);
     }
 
+    #loading-status {
+      display: block;
+      margin-top: 6px;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--warn);
+    }
+
+    /* チャンク進捗グリッド */
+    #chunk-progress-wrap {
+      display: none;
+      margin-top: 14px;
+    }
+
+    #chunk-progress-label {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-sub);
+      margin-bottom: 8px;
+    }
+
+    #chunk-grid {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+
+    .chunk-badge {
+      padding: 4px 10px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 600;
+      border: 1px solid var(--border);
+      background: var(--bg);
+      color: var(--text-mute);
+      min-width: 52px;
+      text-align: center;
+    }
+
+    .chunk-badge.waiting  { background: var(--bg); color: var(--text-mute); border-color: var(--border); }
+    .chunk-badge.running  { background: #fff3cd; color: #7a5c00; border-color: #e6cc5a; }
+    .chunk-badge.done     { background: var(--success-bg); color: var(--success); border-color: #9dd5b3; }
+    .chunk-badge.error    { background: var(--error-bg); color: var(--error); border-color: #f5c6c6; }
+
+    /* 中断ボタン */
+    #abort-btn {
+      display: none;
+      margin-top: 12px;
+    }
+
     @keyframes spin { to { transform: rotate(360deg); } }
 
     /* ============================================================
@@ -319,7 +456,6 @@
       margin-bottom: 12px;
     }
 
-    /* 警告表示（5MB超） */
     #warn-box {
       display: none;
       padding: 12px 16px;
@@ -353,11 +489,12 @@
     .result-actions {
       display: flex;
       gap: 10px;
+      flex-wrap: wrap;
     }
 
     #result-textarea {
       width: 100%;
-      height: 460px;
+      height: 500px;
       border: 1px solid var(--border-dark);
       border-radius: var(--radius);
       padding: 14px 16px;
@@ -390,6 +527,43 @@
       color: var(--success);
       font-weight: 600;
       display: none;
+    }
+
+    /* チャンクログ */
+    #chunk-log-wrap {
+      display: none;
+      margin-top: 16px;
+    }
+
+    #chunk-log-title {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--text-sub);
+      margin-bottom: 8px;
+    }
+
+    #chunk-log {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 12px 14px;
+      font-size: 12px;
+      color: var(--text-sub);
+      font-family: 'Menlo', 'Consolas', 'Courier New', monospace;
+      line-height: 1.8;
+      max-height: 200px;
+      overflow-y: auto;
+    }
+
+    #failed-chunks-wrap {
+      display: none;
+      margin-top: 12px;
+      padding: 12px 16px;
+      background: var(--error-bg);
+      border: 1px solid #f5c6c6;
+      border-radius: var(--radius);
+      font-size: 13px;
+      color: var(--error);
     }
 
     /* ============================================================
@@ -440,13 +614,15 @@
       <div class="icon">🎙️</div>
       <div class="msg">クリックまたはドラッグ＆ドロップでファイルを選択</div>
       <div class="sub">
-        対応形式：m4a / mp3 / wav / mp4 ／
-        推奨：5MB以下／OpenAI上限：25MB。ただしNetlify Functionsの制限により、大きいファイルは失敗する場合があります。
+        対応形式：m4a / mp3 / wav / mp4 ／ 長尺音声は自動分割モードをONにしてください
       </div>
     </div>
 
     <div id="file-selected">✅ <span id="file-name"></span>（<span id="file-size"></span>MB）</div>
-    <div id="warn-box">⚠️ ファイルサイズが5MBを超えています（<span id="warn-size"></span>MB）。Netlify Functionsのタイムアウトやリクエスト上限に達して失敗する可能性があります。まず短い音声でテストすることをお勧めします。</div>
+    <div id="warn-box">
+      ⚠️ ファイルサイズが5MBを超えています（<span id="warn-size"></span>MB）。<br>
+      <strong>自動分割モードをONにして処理することをお勧めします。</strong>
+    </div>
   </div>
 
   <!-- ── セクション2：モデル選択・コスト ── -->
@@ -456,15 +632,17 @@
     <label for="model-select">使用モデル</label>
     <select id="model-select" aria-label="モデル選択">
       <option value="gpt-4o-mini-transcribe" selected>
-        gpt-4o-mini-transcribe（低コスト・文字起こし精度優先／タイムコードは目安）
+        gpt-4o-mini-transcribe（低コスト・文字起こし用／タイムコードは推定）
       </option>
       <option value="gpt-4o-transcribe">
-        gpt-4o-transcribe（高精度／タイムコードは目安）
+        gpt-4o-transcribe（高精度文字起こし用／タイムコードは推定）
       </option>
       <option value="whisper-1">
-        whisper-1（タイムコード精度優先）
+        whisper-1（タイムコード確認用／チャンク内タイムスタンプを取りやすい）
       </option>
     </select>
+
+    <div id="model-note" style="font-size:12px;color:var(--text-sub);margin-top:6px;padding:8px 12px;background:var(--bg);border-radius:var(--radius);"></div>
 
     <div class="info-grid">
       <div class="info-item">
@@ -485,13 +663,43 @@
       ⚠️ 概算です。実際の料金は
       <a href="https://openai.com/pricing" target="_blank" rel="noopener">OpenAIの最新料金ページ</a>
       をご確認ください。<br>
-      ※ 音声時間はファイルサイズから推定した参考値です（形式・ビットレートにより変動します）。
+      ※ 音声時間はファイルサイズから推定した参考値です。長尺音声ではOpenAI API費用がかかります。
     </div>
   </div>
 
-  <!-- ── セクション3：実行 ── -->
+  <!-- ── セクション3：自動分割モード ── -->
   <div class="card">
-    <div class="card-title">3. 文字起こし実行</div>
+    <div class="card-title">3. 自動分割モード</div>
+
+    <div class="split-mode-box">
+      <label class="split-mode-toggle" for="split-toggle">
+        <span class="toggle-switch">
+          <input type="checkbox" id="split-toggle" checked />
+          <span class="toggle-track"></span>
+        </span>
+        長尺音声を自動分割して処理する
+      </label>
+
+      <div class="split-options" id="split-options">
+        <label for="chunk-size-select">分割単位</label>
+        <select id="chunk-size-select" class="chunk-size-select">
+          <option value="60">60秒ごと</option>
+          <option value="90" selected>90秒ごと（初期値・推奨）</option>
+          <option value="120">120秒ごと</option>
+        </select>
+
+        <div class="split-tip">
+          📌 まずは90秒で試してください。失敗する場合は60秒に変更してください。120秒は環境によって失敗する場合があります。<br>
+          ⚠️ タイムコード精度を重視する場合は <strong>whisper-1</strong> を推奨します。<br>
+          ⚠️ 自動分割でも、極端に大きいファイルや長時間音声は失敗する場合があります。最初は10〜30分程度の音声でテストしてください。
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── セクション4：実行 ── -->
+  <div class="card">
+    <div class="card-title">4. 文字起こし実行</div>
 
     <!-- エラー表示 -->
     <div id="error-box" role="alert"></div>
@@ -499,8 +707,18 @@
     <!-- 処理中表示 -->
     <div id="loading">
       <span class="spinner" aria-hidden="true"></span>
-      文字起こし中です。音声の長さによって時間がかかる場合があります。しばらくお待ちください。
+      <span id="loading-main">処理中です。しばらくお待ちください。</span>
       <span class="elapsed" id="elapsed-time"></span>
+      <span id="loading-status"></span>
+    </div>
+
+    <!-- チャンク進捗 -->
+    <div id="chunk-progress-wrap">
+      <div id="chunk-progress-label"></div>
+      <div id="chunk-grid"></div>
+      <button class="btn btn-danger" id="abort-btn" type="button" style="margin-top:12px;display:none;">
+        ⏹ 処理を中断する
+      </button>
     </div>
 
     <button class="btn btn-primary" id="run-btn" type="button">
@@ -508,9 +726,9 @@
     </button>
   </div>
 
-  <!-- ── セクション4：結果 ── -->
+  <!-- ── セクション5：結果 ── -->
   <div class="card" id="result-section">
-    <div class="card-title">4. 文字起こし結果</div>
+    <div class="card-title">5. 文字起こし結果</div>
 
     <div class="result-header">
       <div class="meta" id="result-meta"></div>
@@ -532,6 +750,19 @@
     <div class="timestamp-note" id="timestamp-note">
       📌 このタイムコードは推定です。gpt-4oシリーズはAPIの仕様上セグメント単位のタイムスタンプを取得できないため、音声時間を均等分割して算出しています。正確な発話位置に戻りたい場合は「whisper-1」を使用してください。
     </div>
+
+    <!-- チャンクログ（分割モード時のみ） -->
+    <div id="chunk-log-wrap">
+      <div id="chunk-log-title">📄 チャンク別処理ログ</div>
+      <div id="chunk-log"></div>
+    </div>
+
+    <!-- 失敗チャンク表示 -->
+    <div id="failed-chunks-wrap">
+      <strong>⚠️ 以下のチャンクが失敗しました：</strong>
+      <div id="failed-chunks-list"></div>
+      <div style="margin-top:8px;font-size:12px;">分割単位を短くするか、しばらく待ってから再試行してください。</div>
+    </div>
   </div>
 
   <!-- フッター -->
@@ -543,84 +774,112 @@
 
 <script>
 /* ============================================================
-   AI文字起こし - フロントエンドスクリプト
+   AI文字起こし - フロントエンドスクリプト（自動分割対応版）
 
-   処理フロー:
-   1. ファイル選択 → 音声時間・コスト目安を表示
-   2. モデル選択
-   3. 「文字起こし開始」ボタン → Base64変換 → Functions呼び出し
-   4. 結果受信 → タイムコード付きテキスト表示
-   5. コピー / txtダウンロード
+   通常モード：
+     ファイルをBase64変換 → Netlify Function → 結果表示
 
-   タイムコード付与ロジック:
-   - whisper-1: APIレスポンスの segments[].start を使用（最も正確）
-   - gpt-4o系: テキストを改行・句読点で分割し、
-     推定音声時間から按分して疑似タイムコードを付与
-
-   コスト計算（概算）:
-   - gpt-4o-mini-transcribe: $0.003/分
-   - gpt-4o-transcribe:      $0.006/分
-   - whisper-1:              $0.006/分
-   ※ 2025年時点の目安。最新料金はOpenAIの公式ページで確認すること。
+   自動分割モード：
+     1. Web Audio API で音声をデコード
+     2. 指定秒数（60/90/120秒）ごとにAudioBufferを切り出し
+     3. モノラル16kHz 16bit WAVにエンコード
+     4. チャンクを1つずつ順番にNetlify Functionへ送信
+     5. チャンクの開始時刻を加味してタイムコードを補正
+     6. 全チャンクの結果を結合して表示
 ============================================================ */
 
 // ── 定数 ──────────────────────────────────────────────────────
-const FUNCTION_ENDPOINT  = '/.netlify/functions/transcribe';
-const WARN_FILE_SIZE_MB  = 5;   // 5MB超で警告
-const MAX_FILE_SIZE_MB   = 25;  // 25MB超で拒否
+const FUNCTION_ENDPOINT = '/.netlify/functions/transcribe';
+const WARN_FILE_SIZE_MB = 5;
+const MAX_FILE_SIZE_MB  = 25;   // 通常モードの上限（自動分割は制限なし）
+const TARGET_SAMPLE_RATE = 16000;  // 16kHz モノラル WAV
 
-// コスト目安（1分あたりのUSD）
 const COST_PER_MIN = {
   'gpt-4o-mini-transcribe': 0.003,
   'gpt-4o-transcribe':      0.006,
   'whisper-1':              0.006,
 };
 
-// モデル略称（UI表示用）
 const MODEL_SHORT = {
   'gpt-4o-mini-transcribe': 'gpt-4o-mini',
   'gpt-4o-transcribe':      'gpt-4o',
   'whisper-1':              'whisper-1',
 };
 
-// 音声ビットレート推定（kbps）- ファイルサイズ→時間の概算用
+const MODEL_NOTES = {
+  'gpt-4o-mini-transcribe': '低コスト・文字起こし用。タイムコードは推定値になります。',
+  'gpt-4o-transcribe':      '高精度文字起こし用。タイムコードは推定値になります。',
+  'whisper-1':              'タイムコード確認用。チャンク内タイムスタンプを取りやすく、精度が高いです。タイムコード精度を重視する場合はこちらを推奨。',
+};
+
 const BITRATE_ESTIMATE = {
   'm4a': 128, 'mp3': 128, 'wav': 1400,
   'mp4': 128, 'webm': 96, 'mpga': 128, 'mpeg': 128,
 };
 
 // ── DOM参照 ───────────────────────────────────────────────────
-const fileInput      = document.getElementById('audio-file');
-const fileArea       = document.getElementById('file-area');
-const fileSelected   = document.getElementById('file-selected');
-const fileName       = document.getElementById('file-name');
-const fileSizeEl     = document.getElementById('file-size');
-const warnBox        = document.getElementById('warn-box');
-const warnSize       = document.getElementById('warn-size');
-const modelSelect    = document.getElementById('model-select');
-const estDuration    = document.getElementById('est-duration');
-const estModel       = document.getElementById('est-model');
-const estCost        = document.getElementById('est-cost');
-const runBtn         = document.getElementById('run-btn');
-const loadingEl      = document.getElementById('loading');
-const elapsedTime    = document.getElementById('elapsed-time');
-const errorBox       = document.getElementById('error-box');
-const resultSection  = document.getElementById('result-section');
-const resultTextarea = document.getElementById('result-textarea');
-const resultMeta     = document.getElementById('result-meta');
-const copyBtn        = document.getElementById('copy-btn');
-const copyFeedback   = document.getElementById('copy-feedback');
-const dlBtn          = document.getElementById('dl-btn');
-const timestampNote  = document.getElementById('timestamp-note');
+const fileInput           = document.getElementById('audio-file');
+const fileArea            = document.getElementById('file-area');
+const fileSelected        = document.getElementById('file-selected');
+const fileNameEl          = document.getElementById('file-name');
+const fileSizeEl          = document.getElementById('file-size');
+const warnBox             = document.getElementById('warn-box');
+const warnSize            = document.getElementById('warn-size');
+const modelSelect         = document.getElementById('model-select');
+const modelNote           = document.getElementById('model-note');
+const estDuration         = document.getElementById('est-duration');
+const estModel            = document.getElementById('est-model');
+const estCost             = document.getElementById('est-cost');
+const splitToggle         = document.getElementById('split-toggle');
+const splitOptions        = document.getElementById('split-options');
+const chunkSizeSelect     = document.getElementById('chunk-size-select');
+const runBtn              = document.getElementById('run-btn');
+const loadingEl           = document.getElementById('loading');
+const loadingMain         = document.getElementById('loading-main');
+const loadingStatus       = document.getElementById('loading-status');
+const elapsedTime         = document.getElementById('elapsed-time');
+const errorBox            = document.getElementById('error-box');
+const chunkProgressWrap   = document.getElementById('chunk-progress-wrap');
+const chunkProgressLabel  = document.getElementById('chunk-progress-label');
+const chunkGrid           = document.getElementById('chunk-grid');
+const abortBtn            = document.getElementById('abort-btn');
+const resultSection       = document.getElementById('result-section');
+const resultTextarea      = document.getElementById('result-textarea');
+const resultMeta          = document.getElementById('result-meta');
+const copyBtn             = document.getElementById('copy-btn');
+const copyFeedback        = document.getElementById('copy-feedback');
+const dlBtn               = document.getElementById('dl-btn');
+const timestampNote       = document.getElementById('timestamp-note');
+const chunkLogWrap        = document.getElementById('chunk-log-wrap');
+const chunkLogEl          = document.getElementById('chunk-log');
+const failedChunksWrap    = document.getElementById('failed-chunks-wrap');
+const failedChunksList    = document.getElementById('failed-chunks-list');
 
 // ── 状態 ──────────────────────────────────────────────────────
 let selectedFile     = null;
 let elapsedTimer     = null;
 let elapsedSeconds   = 0;
 let estimatedMinutes = 0;
+let abortRequested   = false;
+
+// ── トグルUI制御 ──────────────────────────────────────────────
+splitToggle.addEventListener('change', () => {
+  splitOptions.style.display = splitToggle.checked ? 'block' : 'none';
+});
+
+// ── モデルノート表示 ─────────────────────────────────────────
+function updateModelNote() {
+  const note = MODEL_NOTES[modelSelect.value] || '';
+  modelNote.textContent = note ? `ℹ️ ${note}` : '';
+}
+
+modelSelect.addEventListener('change', () => {
+  estModel.textContent = MODEL_SHORT[modelSelect.value] || modelSelect.value;
+  updateCostEstimate();
+  updateModelNote();
+});
 
 // ── ユーティリティ ────────────────────────────────────────────
-
 function secondsToTimecode(totalSeconds) {
   const h  = Math.floor(totalSeconds / 3600);
   const m  = Math.floor((totalSeconds % 3600) / 60);
@@ -636,11 +895,10 @@ function getExt(name) {
 }
 
 function estimateDuration(file) {
-  const ext     = getExt(file.name);
-  const kbps    = BITRATE_ESTIMATE[ext] || 128;
-  const sizeKb  = file.size / 1024;
-  const seconds = (sizeKb * 8) / kbps;
-  return Math.max(seconds / 60, 0.1);
+  const ext    = getExt(file.name);
+  const kbps   = BITRATE_ESTIMATE[ext] || 128;
+  const sizeKb = file.size / 1024;
+  return Math.max((sizeKb * 8) / kbps / 60, 0.1);
 }
 
 function showError(msg) {
@@ -668,27 +926,24 @@ function updateCostEstimate() {
   const s = Math.floor(totalSec % 60);
   estDuration.textContent = `約${m}分${s > 0 ? s + '秒' : ''}（目安）`;
 
-  const usdPerMin  = COST_PER_MIN[model] || 0.003;
-  const usdTotal   = usdPerMin * minutes;
-  const jpyTotal   = usdTotal * 145;
+  const usdPerMin = COST_PER_MIN[model] || 0.003;
+  const jpyTotal  = usdPerMin * minutes * 145;
   estCost.textContent = `¥${jpyTotal.toFixed(0)}前後（目安）`;
 }
 
-// ── ファイル選択処理 ──────────────────────────────────────────
-
+// ── ファイル選択処理 ─────────────────────────────────────────
 function handleFileSelect(file) {
   if (!file) return;
-
   const sizeMB = file.size / 1024 / 1024;
 
-  // 25MB超 → 拒否
-  if (sizeMB > MAX_FILE_SIZE_MB) {
-    showError(`ファイルサイズが大きすぎます（${sizeMB.toFixed(1)}MB）。OpenAI APIの上限は25MBです。\n音声を短く分割してから再度アップロードしてください。`);
+  // 自動分割モードなら25MB制限を撤廃（ただし極端に大きいものは警告）
+  const isSplitMode = splitToggle.checked;
+  if (!isSplitMode && sizeMB > MAX_FILE_SIZE_MB) {
+    showError(`ファイルサイズが大きすぎます（${sizeMB.toFixed(1)}MB）。OpenAI APIの上限は25MBです。\n自動分割モードをONにするか、音声を短く分割してください。`);
     warnBox.style.display = 'none';
     return;
   }
 
-  // 拡張子チェック
   const ext = getExt(file.name);
   const ok  = ['m4a','mp3','wav','mp4','webm','mpga','mpeg'].includes(ext);
   if (!ok) {
@@ -700,14 +955,13 @@ function handleFileSelect(file) {
   clearError();
   selectedFile = file;
 
-  fileName.textContent  = file.name;
-  fileSizeEl.textContent = sizeMB.toFixed(1);
+  fileNameEl.textContent  = file.name;
+  fileSizeEl.textContent  = sizeMB.toFixed(1);
   fileSelected.style.display = 'block';
 
-  // 5MB超 → 警告（拒否はしない）
   if (sizeMB > WARN_FILE_SIZE_MB) {
-    warnSize.textContent = sizeMB.toFixed(1);
-    warnBox.style.display = 'block';
+    warnSize.textContent       = sizeMB.toFixed(1);
+    warnBox.style.display      = 'block';
   } else {
     warnBox.style.display = 'none';
   }
@@ -716,9 +970,7 @@ function handleFileSelect(file) {
   updateCostEstimate();
 }
 
-fileInput.addEventListener('change', (e) => {
-  handleFileSelect(e.target.files[0]);
-});
+fileInput.addEventListener('change', (e) => handleFileSelect(e.target.files[0]));
 
 fileArea.addEventListener('dragover', (e) => {
   e.preventDefault();
@@ -731,22 +983,30 @@ fileArea.addEventListener('drop', (e) => {
   handleFileSelect(e.dataTransfer?.files[0]);
 });
 
-modelSelect.addEventListener('change', () => {
-  estModel.textContent = MODEL_SHORT[modelSelect.value] || modelSelect.value;
-  updateCostEstimate();
-});
+// ── 経過時間カウンター ────────────────────────────────────────
+function startElapsed() {
+  elapsedSeconds = 0;
+  elapsedTime.textContent = '0秒経過';
+  elapsedTimer = setInterval(() => {
+    elapsedSeconds++;
+    elapsedTime.textContent = `${elapsedSeconds}秒経過`;
+  }, 1000);
+}
 
-// ── タイムコード付きテキスト生成 ──────────────────────────────
+function stopElapsed() {
+  if (elapsedTimer) { clearInterval(elapsedTimer); elapsedTimer = null; }
+}
 
-function formatWithWhisperSegments(segments) {
+// ── タイムコード付きテキスト生成（通常モード用）────────────
+function formatWithWhisperSegments(segments, offsetSec = 0) {
   return segments.map((seg) => {
-    const tc   = secondsToTimecode(seg.start || 0);
+    const tc   = secondsToTimecode((seg.start || 0) + offsetSec);
     const text = (seg.text || '').trim();
     return `${tc}\n${text}`;
   }).join('\n\n');
 }
 
-function formatWithPseudoTimecodes(text, estimatedTotalSec) {
+function formatWithPseudoTimecodes(text, estimatedTotalSec, offsetSec = 0) {
   if (!text) return '';
 
   const rawSentences = text
@@ -758,13 +1018,12 @@ function formatWithPseudoTimecodes(text, estimatedTotalSec) {
     ? rawSentences
     : splitByLength(text, 60);
 
-  const total = sentences.length;
-  const secPerSeg = estimatedTotalSec / Math.max(total, 1);
+  const total      = sentences.length;
+  const secPerSeg  = estimatedTotalSec / Math.max(total, 1);
 
   return sentences.map((sentence, i) => {
-    const startSec = Math.floor(i * secPerSeg);
-    const tc = secondsToTimecode(startSec);
-    return `${tc}\n${sentence}`;
+    const startSec = Math.floor(i * secPerSeg) + offsetSec;
+    return `${secondsToTimecode(startSec)}\n${sentence}`;
   }).join('\n\n');
 }
 
@@ -776,24 +1035,356 @@ function splitByLength(text, len) {
   return result;
 }
 
-// ── 経過時間カウンター ─────────────────────────────────────────
-function startElapsed() {
-  elapsedSeconds = 0;
-  elapsedTime.textContent = '0秒経過';
-  elapsedTimer = setInterval(() => {
-    elapsedSeconds++;
-    elapsedTime.textContent = `${elapsedSeconds}秒経過`;
-  }, 1000);
-}
+// ── WAVエンコーダー（モノラル 16kHz 16bit）──────────────────
+function encodeWAV(audioBuffer) {
+  // AudioBuffer をモノラル 16kHz に変換
+  const originalSampleRate = audioBuffer.sampleRate;
+  const originalLength     = audioBuffer.length;
 
-function stopElapsed() {
-  if (elapsedTimer) {
-    clearInterval(elapsedTimer);
-    elapsedTimer = null;
+  // ダウンサンプル比（16kHzへ）
+  const ratio         = originalSampleRate / TARGET_SAMPLE_RATE;
+  const newLength     = Math.floor(originalLength / ratio);
+  const monoSamples   = new Float32Array(newLength);
+
+  // チャンネルをミックスしてモノラル化 + ダウンサンプル
+  const numChannels = audioBuffer.numberOfChannels;
+  for (let i = 0; i < newLength; i++) {
+    const srcIdx = Math.min(Math.floor(i * ratio), originalLength - 1);
+    let sum = 0;
+    for (let ch = 0; ch < numChannels; ch++) {
+      sum += audioBuffer.getChannelData(ch)[srcIdx];
+    }
+    monoSamples[i] = sum / numChannels;
   }
+
+  // Float32 → Int16
+  const int16 = new Int16Array(newLength);
+  for (let i = 0; i < newLength; i++) {
+    const s = Math.max(-1, Math.min(1, monoSamples[i]));
+    int16[i] = s < 0 ? s * 0x8000 : s * 0x7FFF;
+  }
+
+  // WAVヘッダ生成
+  const dataLength  = int16.byteLength;
+  const buffer      = new ArrayBuffer(44 + dataLength);
+  const view        = new DataView(buffer);
+
+  function writeString(offset, str) {
+    for (let i = 0; i < str.length; i++) {
+      view.setUint8(offset + i, str.charCodeAt(i));
+    }
+  }
+
+  writeString(0, 'RIFF');
+  view.setUint32(4,  36 + dataLength, true);
+  writeString(8, 'WAVE');
+  writeString(12, 'fmt ');
+  view.setUint32(16, 16, true);            // チャンクサイズ
+  view.setUint16(20, 1, true);             // PCM
+  view.setUint16(22, 1, true);             // モノラル
+  view.setUint32(24, TARGET_SAMPLE_RATE, true);   // サンプルレート
+  view.setUint32(28, TARGET_SAMPLE_RATE * 2, true); // バイトレート
+  view.setUint16(32, 2, true);             // ブロックアライン
+  view.setUint16(34, 16, true);            // ビット深度
+  writeString(36, 'data');
+  view.setUint32(40, dataLength, true);
+
+  // PCMデータを書き込み
+  const dataView = new Int16Array(buffer, 44);
+  dataView.set(int16);
+
+  return buffer;
 }
 
-// ── 文字起こし実行 ────────────────────────────────────────────
+// ── チャンク音声切り出し ─────────────────────────────────────
+function sliceAudioBuffer(audioBuffer, startSec, endSec) {
+  const sampleRate  = audioBuffer.sampleRate;
+  const startSample = Math.floor(startSec * sampleRate);
+  const endSample   = Math.min(Math.floor(endSec * sampleRate), audioBuffer.length);
+  const length      = endSample - startSample;
+
+  if (length <= 0) return null;
+
+  const numChannels = audioBuffer.numberOfChannels;
+
+  // OfflineAudioContextは使わず、手動でFloat32Arrayをコピー
+  const sliced = {
+    sampleRate:       sampleRate,
+    length:           length,
+    numberOfChannels: numChannels,
+    getChannelData:   (ch) => {
+      const src  = audioBuffer.getChannelData(ch);
+      const dest = new Float32Array(length);
+      dest.set(src.subarray(startSample, endSample));
+      return dest;
+    },
+  };
+
+  return sliced;
+}
+
+// ── チャンクバッジ制御 ───────────────────────────────────────
+let chunkBadges = [];
+
+function initChunkBadges(total) {
+  chunkGrid.innerHTML  = '';
+  chunkBadges          = [];
+  for (let i = 1; i <= total; i++) {
+    const badge = document.createElement('div');
+    badge.className   = 'chunk-badge waiting';
+    badge.textContent = `${i}/${total}`;
+    badge.title       = '待機中';
+    chunkGrid.appendChild(badge);
+    chunkBadges.push(badge);
+  }
+  chunkProgressLabel.textContent = `全${total}チャンク - 処理待機中`;
+  chunkProgressWrap.style.display = 'block';
+  abortBtn.style.display          = 'block';
+}
+
+function updateChunkBadge(idx, status) {
+  const badge = chunkBadges[idx];
+  if (!badge) return;
+  badge.className = `chunk-badge ${status}`;
+  const labels = { waiting: '待機中', running: '処理中', done: '完了', error: 'エラー' };
+  badge.title = labels[status] || status;
+}
+
+function updateChunkProgressLabel(current, total) {
+  chunkProgressLabel.textContent = `全${total}チャンク中 ${current}/${total} を文字起こし中`;
+}
+
+// ── Netlify Functionへの安全なfetch ─────────────────────────
+async function callTranscribeFunction(audioBase64, mimeType, fileName, model) {
+  const payload = { audioBase64, mimeType, fileName, model };
+
+  let response;
+  try {
+    response = await fetch(FUNCTION_ENDPOINT, {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify(payload),
+    });
+  } catch (networkErr) {
+    throw new Error('サーバーへの接続に失敗しました。インターネット接続を確認してください。');
+  }
+
+  // response.text()で受け取り、空チェック後にJSONパース
+  let rawText;
+  try {
+    rawText = await response.text();
+  } catch (e) {
+    throw new Error('サーバーからの応答を読み取れませんでした。');
+  }
+
+  if (!rawText || rawText.trim() === '') {
+    throw new Error('サーバーから空の応答が返りました。Netlify Functionsの制限により失敗した可能性があります。');
+  }
+
+  let data;
+  try {
+    data = JSON.parse(rawText);
+  } catch (e) {
+    throw new Error(`サーバーからの応答を解析できませんでした。Netlify Functionsの制限により失敗した可能性があります。\n応答内容（先頭200文字）: ${rawText.slice(0, 200)}`);
+  }
+
+  if (!response.ok || data.success === false) {
+    throw new Error(data.error || `サーバーエラーが発生しました（${response.status}）`);
+  }
+
+  return data;
+}
+
+// ── ArrayBuffer → Base64 変換 ────────────────────────────────
+function arrayBufferToBase64(buffer) {
+  const bytes = new Uint8Array(buffer);
+  let binary  = '';
+  const chunkSize = 8192;
+  for (let i = 0; i < bytes.length; i += chunkSize) {
+    binary += String.fromCharCode(...bytes.subarray(i, i + chunkSize));
+  }
+  return btoa(binary);
+}
+
+// ── 通常モード文字起こし ─────────────────────────────────────
+async function runNormalMode(file, model) {
+  setStatus('音声ファイルを読み込んでいます…');
+
+  const base64 = await fileToBase64(file);
+  setStatus('文字起こし中です。音声の長さによって時間がかかります。');
+
+  const data = await callTranscribeFunction(
+    base64,
+    file.type || guessMime(file.name),
+    file.name,
+    model
+  );
+
+  let formattedText = '';
+  let usedPseudo    = false;
+
+  if (data.hasTimestamps && data.segments?.length > 0) {
+    formattedText = formatWithWhisperSegments(data.segments, 0);
+  } else {
+    const estSec  = estimatedMinutes * 60;
+    formattedText = formatWithPseudoTimecodes(data.text || '', estSec, 0);
+    usedPseudo    = true;
+  }
+
+  return { formattedText, usedPseudo, data, isSplit: false };
+}
+
+// ── 自動分割モード文字起こし ─────────────────────────────────
+async function runSplitMode(file, model, chunkSec) {
+  setStatus('音声を解析中です…');
+
+  // Step1: ArrayBufferとして読み込み
+  let arrayBuffer;
+  try {
+    arrayBuffer = await fileToArrayBuffer(file);
+  } catch (e) {
+    throw new Error('音声の読み込みに失敗しました。ファイルが破損していないか確認してください。');
+  }
+
+  setStatus('自動分割中です…（ブラウザで音声をデコードしています。PCの性能によっては時間がかかります）');
+
+  // Step2: Web Audio API でデコード
+  let audioBuffer;
+  try {
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    audioBuffer = await audioCtx.decodeAudioData(arrayBuffer);
+    audioCtx.close();
+  } catch (e) {
+    throw new Error('ブラウザで音声を分割できませんでした。\nこの形式はブラウザで分割できない可能性があります。\nmp3またはwavに変換してから試してください。\n（エラー詳細: ' + e.message + '）');
+  }
+
+  const totalDuration = audioBuffer.duration;
+  const totalChunks   = Math.ceil(totalDuration / chunkSec);
+
+  if (totalChunks === 0) {
+    throw new Error('音声の長さが0秒です。音声ファイルに音声が含まれているか確認してください。');
+  }
+
+  setStatus(`自動分割完了：全${totalChunks}チャンク（${Math.round(totalDuration)}秒）`);
+
+  // チャンクバッジ初期化
+  initChunkBadges(totalChunks);
+
+  const results     = [];
+  const failedChunks = [];
+  const logLines    = [];
+
+  // Step3: チャンクを順番に処理
+  for (let i = 0; i < totalChunks; i++) {
+    if (abortRequested) {
+      throw new Error('処理を中断しました。');
+    }
+
+    const chunkIndex  = i + 1;
+    const startSec    = i * chunkSec;
+    const endSec      = Math.min((i + 1) * chunkSec, totalDuration);
+    const chunkLabel  = `${chunkIndex}/${totalChunks}`;
+
+    updateChunkBadge(i, 'running');
+    updateChunkProgressLabel(chunkIndex, totalChunks);
+    setStatus(`全${totalChunks}チャンク中 ${chunkLabel} を文字起こし中…`);
+
+    let chunkResult = null;
+
+    try {
+      // 音声チャンクを切り出し
+      const sliced = sliceAudioBuffer(audioBuffer, startSec, endSec);
+      if (!sliced) {
+        throw new Error('チャンクの切り出しに失敗しました。');
+      }
+
+      // WAVエンコード（モノラル16kHz）
+      const wavBuffer = encodeWAV(sliced);
+      const base64    = arrayBufferToBase64(wavBuffer);
+      const sizeMB    = wavBuffer.byteLength / 1024 / 1024;
+
+      // Netlify Functionへ送信
+      const chunkFileName = `chunk_${String(i).padStart(3,'0')}.wav`;
+      const data = await callTranscribeFunction(base64, 'audio/wav', chunkFileName, model);
+
+      // タイムコード補正：チャンク内タイムコード + チャンク開始秒
+      const chunkDuration = endSec - startSec;
+      let chunkText = '';
+      let chunkUsedPseudo = false;
+
+      if (data.hasTimestamps && data.segments?.length > 0) {
+        chunkText = formatWithWhisperSegments(data.segments, startSec);
+      } else {
+        chunkText        = formatWithPseudoTimecodes(data.text || '', chunkDuration, startSec);
+        chunkUsedPseudo  = true;
+      }
+
+      chunkResult = {
+        index:     i,
+        startSec,
+        endSec,
+        text:      data.text || '',
+        formatted: chunkText,
+        usedPseudo: chunkUsedPseudo,
+        sizeMB,
+      };
+
+      updateChunkBadge(i, 'done');
+      logLines.push(
+        `${chunkLabel} ✅ 完了：${secondsToTimecode(startSec)}〜${secondsToTimecode(endSec)} （WAV: ${sizeMB.toFixed(1)}MB, ${(data.text||'').length}文字）`
+      );
+
+    } catch (err) {
+      updateChunkBadge(i, 'error');
+      const errMsg = err.message || '不明なエラー';
+      failedChunks.push({ index: chunkIndex, startSec, endSec, error: errMsg });
+      logLines.push(`${chunkLabel} ❌ 失敗：${errMsg.slice(0, 80)}`);
+
+      // エラーでも処理は続行（空テキストで穴埋め）
+      chunkResult = {
+        index: i,
+        startSec,
+        endSec,
+        text:      '',
+        formatted: `${secondsToTimecode(startSec)}\n【チャンク${chunkLabel}の文字起こしに失敗しました: ${errMsg.slice(0, 60)}】`,
+        usedPseudo: false,
+        sizeMB: 0,
+      };
+    }
+
+    if (chunkResult) results.push(chunkResult);
+
+    // ログを更新
+    chunkLogEl.textContent = logLines.join('\n');
+    chunkLogEl.scrollTop   = chunkLogEl.scrollHeight;
+  }
+
+  setStatus('結合中です…');
+
+  // Step4: 全チャンクの結果を結合
+  const formattedText = results.map(r => r.formatted).join('\n\n');
+  const usedPseudo    = results.some(r => r.usedPseudo);
+  const totalChars    = results.reduce((sum, r) => sum + r.text.length, 0);
+
+  return {
+    formattedText,
+    usedPseudo,
+    isSplit:      true,
+    totalChunks,
+    failedChunks,
+    totalChars,
+    totalDuration,
+    logLines,
+  };
+}
+
+// ── ステータスメッセージ更新 ─────────────────────────────────
+function setStatus(msg) {
+  loadingMain.textContent   = msg;
+  loadingStatus.textContent = '';
+}
+
+// ── 実行ボタン ────────────────────────────────────────────────
 runBtn.addEventListener('click', async () => {
   clearError();
 
@@ -802,76 +1393,84 @@ runBtn.addEventListener('click', async () => {
     return;
   }
 
-  const model = modelSelect.value;
+  const model        = modelSelect.value;
+  const isSplitMode  = splitToggle.checked;
+  const chunkSec     = parseInt(chunkSizeSelect.value, 10) || 90;
 
-  runBtn.disabled          = true;
-  loadingEl.style.display  = 'block';
-  resultSection.style.display = 'none';
+  abortRequested = false;
+  runBtn.disabled              = true;
+  loadingEl.style.display      = 'block';
+  resultSection.style.display  = 'none';
+  chunkProgressWrap.style.display = 'none';
+  chunkLogWrap.style.display   = 'none';
+  failedChunksWrap.style.display = 'none';
+
   startElapsed();
 
   try {
-    const base64 = await fileToBase64(selectedFile);
+    let result;
 
-    const payload = {
-      audioBase64: base64,
-      mimeType:    selectedFile.type || guessMime(selectedFile.name),
-      fileName:    selectedFile.name,
-      model:       model,
-    };
-
-    let response;
-    try {
-      response = await fetch(FUNCTION_ENDPOINT, {
-        method:  'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body:    JSON.stringify(payload),
-      });
-    } catch (networkErr) {
-      throw new Error('サーバーへの接続に失敗しました。インターネット接続を確認してください。');
-    }
-
-    const data = await response.json();
-
-    if (!response.ok) {
-      throw new Error(data.error || `サーバーエラーが発生しました（${response.status}）`);
-    }
-
-    let formattedText = '';
-    let usedPseudo    = false;
-
-    if (data.hasTimestamps && data.segments?.length > 0) {
-      formattedText = formatWithWhisperSegments(data.segments);
+    if (isSplitMode) {
+      result = await runSplitMode(selectedFile, model, chunkSec);
     } else {
-      const estSec = estimatedMinutes * 60;
-      formattedText = formatWithPseudoTimecodes(data.text || '', estSec);
-      usedPseudo    = true;
+      result = await runNormalMode(selectedFile, model);
     }
 
-    const charCount   = (data.text || '').length;
-    const apiDuration = data.estimatedDuration
-      ? `APIレポート ${Math.round(data.estimatedDuration)}秒 /`
-      : '';
-    const modelLabel  = MODEL_SHORT[data.model] || data.model;
+    // ── 結果表示 ──
+    setStatus('完了しました');
 
-    resultMeta.textContent =
-      `モデル: ${modelLabel} ／ ${apiDuration} 文字数: ${charCount.toLocaleString()}文字 ／ 処理時間: ${elapsedSeconds}秒`;
-
-    resultTextarea.value        = formattedText;
+    resultTextarea.value = result.formattedText;
     resultSection.style.display = 'block';
 
-    // gpt-4o系の場合は疑似タイムコード注記を表示
-    timestampNote.style.display = usedPseudo ? 'block' : 'none';
+    if (result.isSplit) {
+      const successCount = result.totalChunks - result.failedChunks.length;
+      resultMeta.textContent =
+        `モデル: ${MODEL_SHORT[model]} ／ 自動分割: ${result.totalChunks}チャンク（成功${successCount}件）` +
+        ` ／ 総文字数: ${result.totalChars.toLocaleString()}文字 ／ 処理時間: ${elapsedSeconds}秒`;
+
+      // チャンクログ表示
+      chunkLogEl.textContent = result.logLines.join('\n');
+      chunkLogWrap.style.display = 'block';
+
+      // 失敗チャンク表示
+      if (result.failedChunks.length > 0) {
+        failedChunksList.innerHTML = result.failedChunks.map(f =>
+          `<div>チャンク ${f.index}/${result.totalChunks}（${secondsToTimecode(f.startSec)}〜${secondsToTimecode(f.endSec)}）: ${f.error.slice(0, 100)}</div>`
+        ).join('');
+        failedChunksWrap.style.display = 'block';
+      }
+    } else {
+      const charCount   = (result.data?.text || '').length;
+      const apiDuration = result.data?.estimatedDuration
+        ? `APIレポート ${Math.round(result.data.estimatedDuration)}秒 ／`
+        : '';
+      resultMeta.textContent =
+        `モデル: ${MODEL_SHORT[model]} ／ ${apiDuration} 文字数: ${charCount.toLocaleString()}文字 ／ 処理時間: ${elapsedSeconds}秒`;
+    }
+
+    timestampNote.style.display = result.usedPseudo ? 'block' : 'none';
 
     resultSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
 
   } catch (err) {
-    showError(err.message || '文字起こしに失敗しました。');
+    const msg = err.message || '文字起こしに失敗しました。';
+    showError(msg);
     resultSection.style.display = 'none';
   } finally {
     stopElapsed();
-    runBtn.disabled         = false;
-    loadingEl.style.display = 'none';
+    runBtn.disabled           = false;
+    loadingEl.style.display   = 'none';
+    abortBtn.style.display    = 'none';
+    abortRequested            = false;
   }
+});
+
+// ── 中断ボタン ────────────────────────────────────────────────
+abortBtn.addEventListener('click', () => {
+  abortRequested = true;
+  abortBtn.disabled        = true;
+  abortBtn.textContent     = '⏹ 中断中…';
+  loadingMain.textContent  = '処理を中断しています…';
 });
 
 // ── コピーボタン ──────────────────────────────────────────────
@@ -881,14 +1480,13 @@ copyBtn.addEventListener('click', async () => {
 
   try {
     await navigator.clipboard.writeText(text);
-    copyFeedback.style.display = 'inline';
-    setTimeout(() => { copyFeedback.style.display = 'none'; }, 2000);
   } catch {
     resultTextarea.select();
     document.execCommand('copy');
-    copyFeedback.style.display = 'inline';
-    setTimeout(() => { copyFeedback.style.display = 'none'; }, 2000);
   }
+
+  copyFeedback.style.display = 'inline';
+  setTimeout(() => { copyFeedback.style.display = 'none'; }, 2000);
 });
 
 // ── ダウンロードボタン ────────────────────────────────────────
@@ -913,13 +1511,20 @@ dlBtn.addEventListener('click', () => {
 // ── ヘルパー：File → Base64 ───────────────────────────────────
 function fileToBase64(file) {
   return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload  = () => {
-      const base64 = reader.result.split(',')[1];
-      resolve(base64);
-    };
+    const reader   = new FileReader();
+    reader.onload  = () => resolve(reader.result.split(',')[1]);
     reader.onerror = () => reject(new Error('ファイルの読み込みに失敗しました。'));
     reader.readAsDataURL(file);
+  });
+}
+
+// ── ヘルパー：File → ArrayBuffer ─────────────────────────────
+function fileToArrayBuffer(file) {
+  return new Promise((resolve, reject) => {
+    const reader   = new FileReader();
+    reader.onload  = () => resolve(reader.result);
+    reader.onerror = () => reject(new Error('ファイルの読み込みに失敗しました。'));
+    reader.readAsArrayBuffer(file);
   });
 }
 
@@ -936,6 +1541,7 @@ function guessMime(name) {
 
 // ── 初期表示 ──────────────────────────────────────────────────
 estModel.textContent = MODEL_SHORT[modelSelect.value] || modelSelect.value;
+updateModelNote();
 </script>
 
 </body>
