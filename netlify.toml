@@ -1,0 +1,34 @@
+# ============================================================
+# netlify.toml
+# Netlify 設定ファイル
+# ============================================================
+
+[build]
+  # ビルドコマンド（静的サイトなのでビルド不要）
+  command = ""
+  # 公開ディレクトリ（index.htmlがあるルート）
+  publish = "."
+  # Functions ディレクトリ
+  functions = "netlify/functions"
+
+[functions]
+  node_bundler = "esbuild"
+
+[functions."transcribe"]
+  # タイムアウト設定（秒）
+  # 注意：Netlify無料プランの上限は10秒。有料プランは最大26秒。
+  # 26秒を超える処理が必要な場合は Background Functions への移行を検討すること。
+  timeout = 26
+
+[[headers]]
+  for = "/netlify/functions/*"
+  [headers.values]
+    Access-Control-Allow-Origin = "*"
+    Access-Control-Allow-Methods = "POST, OPTIONS"
+    Access-Control-Allow-Headers = "Content-Type"
+
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+  force = false

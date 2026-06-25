@@ -1,0 +1,942 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AI文字起こし</title>
+  <style>
+    /* ============================================================
+       リセット・ベース
+    ============================================================ */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:          #f5f5f5;
+      --surface:     #ffffff;
+      --border:      #d9d9d9;
+      --border-dark: #b0b0b0;
+      --text:        #1a1a1a;
+      --text-sub:    #555555;
+      --text-mute:   #888888;
+      --accent:      #1a56a0;
+      --accent-h:    #143f7a;
+      --accent-lite: #e8f0fb;
+      --success:     #1a7a3c;
+      --success-bg:  #e8f5ee;
+      --error:       #b71c1c;
+      --error-bg:    #fdecea;
+      --warn:        #7a5c00;
+      --warn-bg:     #fff8e1;
+      --radius:      6px;
+      --shadow:      0 1px 4px rgba(0,0,0,0.10);
+    }
+
+    body {
+      font-family: 'Helvetica Neue', Arial, 'Hiragino Kaku Gothic ProN', 'Meiryo', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      font-size: 15px;
+      line-height: 1.6;
+      min-height: 100vh;
+    }
+
+    /* ============================================================
+       レイアウト
+    ============================================================ */
+    .wrap {
+      max-width: 860px;
+      margin: 0 auto;
+      padding: 0 20px 60px;
+    }
+
+    /* ============================================================
+       ヘッダー
+    ============================================================ */
+    header {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 18px 20px;
+      margin-bottom: 28px;
+    }
+
+    header .inner {
+      max-width: 860px;
+      margin: 0 auto;
+      display: flex;
+      align-items: baseline;
+      gap: 14px;
+    }
+
+    header h1 {
+      font-size: 20px;
+      font-weight: 700;
+      color: var(--accent);
+      letter-spacing: 0.02em;
+    }
+
+    header p {
+      font-size: 13px;
+      color: var(--text-sub);
+    }
+
+    /* ============================================================
+       カード
+    ============================================================ */
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 24px;
+      margin-bottom: 18px;
+      box-shadow: var(--shadow);
+    }
+
+    .card-title {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--text-sub);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      margin-bottom: 14px;
+      padding-bottom: 10px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    /* ============================================================
+       フォーム要素
+    ============================================================ */
+    label {
+      display: block;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-sub);
+      margin-bottom: 6px;
+    }
+
+    /* ファイル入力 */
+    .file-area {
+      border: 2px dashed var(--border-dark);
+      border-radius: var(--radius);
+      padding: 28px 20px;
+      text-align: center;
+      cursor: pointer;
+      transition: border-color .15s, background .15s;
+      position: relative;
+    }
+
+    .file-area:hover,
+    .file-area.drag-over {
+      border-color: var(--accent);
+      background: var(--accent-lite);
+    }
+
+    .file-area input[type="file"] {
+      position: absolute;
+      inset: 0;
+      opacity: 0;
+      cursor: pointer;
+      width: 100%;
+      height: 100%;
+    }
+
+    .file-area .icon {
+      font-size: 28px;
+      margin-bottom: 6px;
+    }
+
+    .file-area .msg {
+      font-size: 14px;
+      color: var(--text-sub);
+    }
+
+    .file-area .sub {
+      font-size: 12px;
+      color: var(--text-mute);
+      margin-top: 4px;
+    }
+
+    #file-selected {
+      margin-top: 10px;
+      font-size: 13px;
+      color: var(--success);
+      font-weight: 600;
+      display: none;
+    }
+
+    /* セレクト */
+    select {
+      width: 100%;
+      padding: 9px 12px;
+      border: 1px solid var(--border-dark);
+      border-radius: var(--radius);
+      font-size: 14px;
+      color: var(--text);
+      background: var(--surface);
+      appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23888' stroke-width='1.5' fill='none'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 12px center;
+      cursor: pointer;
+    }
+
+    select:focus {
+      outline: 2px solid var(--accent);
+      outline-offset: 1px;
+      border-color: var(--accent);
+    }
+
+    /* ============================================================
+       情報グリッド（推定時間・コスト）
+    ============================================================ */
+    .info-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+      margin-top: 14px;
+    }
+
+    .info-item {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 12px 14px;
+    }
+
+    .info-item .label {
+      font-size: 11px;
+      color: var(--text-mute);
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.07em;
+      margin-bottom: 4px;
+    }
+
+    .info-item .value {
+      font-size: 16px;
+      font-weight: 700;
+      color: var(--text);
+    }
+
+    .cost-note {
+      font-size: 11px;
+      color: var(--text-mute);
+      margin-top: 8px;
+    }
+
+    /* ============================================================
+       ボタン
+    ============================================================ */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      padding: 10px 22px;
+      border-radius: var(--radius);
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      border: none;
+      transition: background .15s, opacity .15s, transform .08s;
+      text-decoration: none;
+    }
+
+    .btn:active { transform: scale(0.98); }
+    .btn:disabled { opacity: 0.45; cursor: not-allowed; transform: none; }
+
+    .btn-primary {
+      background: var(--accent);
+      color: #fff;
+      width: 100%;
+      justify-content: center;
+      font-size: 15px;
+      padding: 13px 22px;
+    }
+
+    .btn-primary:hover:not(:disabled) { background: var(--accent-h); }
+
+    .btn-secondary {
+      background: var(--surface);
+      color: var(--accent);
+      border: 1px solid var(--accent);
+    }
+
+    .btn-secondary:hover:not(:disabled) { background: var(--accent-lite); }
+
+    .btn-success {
+      background: var(--success);
+      color: #fff;
+    }
+
+    .btn-success:hover:not(:disabled) { background: #15622f; }
+
+    /* ============================================================
+       処理中インジケーター
+    ============================================================ */
+    #loading {
+      display: none;
+      padding: 16px 20px;
+      background: var(--warn-bg);
+      border: 1px solid #e6cc5a;
+      border-radius: var(--radius);
+      font-size: 14px;
+      color: var(--warn);
+    }
+
+    #loading .spinner {
+      display: inline-block;
+      width: 16px;
+      height: 16px;
+      border: 2px solid #c8a800;
+      border-top-color: transparent;
+      border-radius: 50%;
+      animation: spin .7s linear infinite;
+      vertical-align: middle;
+      margin-right: 8px;
+    }
+
+    .elapsed {
+      display: inline-block;
+      margin-left: 10px;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--warn);
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ============================================================
+       エラー表示
+    ============================================================ */
+    #error-box {
+      display: none;
+      padding: 14px 18px;
+      background: var(--error-bg);
+      border: 1px solid #f5c6c6;
+      border-radius: var(--radius);
+      font-size: 13px;
+      color: var(--error);
+      white-space: pre-wrap;
+      margin-bottom: 12px;
+    }
+
+    /* 警告表示（5MB超） */
+    #warn-box {
+      display: none;
+      padding: 12px 16px;
+      background: var(--warn-bg);
+      border: 1px solid #e6cc5a;
+      border-radius: var(--radius);
+      font-size: 13px;
+      color: var(--warn);
+      margin-top: 10px;
+    }
+
+    /* ============================================================
+       結果エリア
+    ============================================================ */
+    #result-section { display: none; }
+
+    .result-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 10px;
+      flex-wrap: wrap;
+    }
+
+    .result-header .meta {
+      font-size: 12px;
+      color: var(--text-mute);
+    }
+
+    .result-actions {
+      display: flex;
+      gap: 10px;
+    }
+
+    #result-textarea {
+      width: 100%;
+      height: 460px;
+      border: 1px solid var(--border-dark);
+      border-radius: var(--radius);
+      padding: 14px 16px;
+      font-family: 'Menlo', 'Consolas', 'Courier New', monospace;
+      font-size: 13.5px;
+      line-height: 1.75;
+      color: var(--text);
+      resize: vertical;
+      background: #fafafa;
+    }
+
+    #result-textarea:focus {
+      outline: 2px solid var(--accent);
+      outline-offset: 1px;
+    }
+
+    .timestamp-note {
+      font-size: 12px;
+      color: var(--warn);
+      margin-top: 8px;
+      padding: 10px 14px;
+      background: var(--warn-bg);
+      border-radius: var(--radius);
+      border: 1px solid #e6cc5a;
+      display: none;
+    }
+
+    .copy-feedback {
+      font-size: 12px;
+      color: var(--success);
+      font-weight: 600;
+      display: none;
+    }
+
+    /* ============================================================
+       フッター
+    ============================================================ */
+    footer {
+      margin-top: 40px;
+      padding-top: 20px;
+      border-top: 1px solid var(--border);
+      font-size: 12px;
+      color: var(--text-mute);
+      text-align: center;
+    }
+
+    /* ============================================================
+       レスポンシブ
+    ============================================================ */
+    @media (max-width: 600px) {
+      .info-grid { grid-template-columns: 1fr 1fr; }
+      .result-actions { flex-direction: column; width: 100%; }
+      .result-actions .btn { justify-content: center; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ヘッダー -->
+<header>
+  <div class="inner">
+    <h1>AI文字起こし</h1>
+    <p>会議・フォーラム・打ち合わせの音声をタイムコード付きテキストに変換します</p>
+  </div>
+</header>
+
+<div class="wrap">
+
+  <!-- ── セクション1：ファイル選択 ── -->
+  <div class="card">
+    <div class="card-title">1. 音声ファイルを選択</div>
+
+    <div class="file-area" id="file-area">
+      <input
+        type="file"
+        id="audio-file"
+        accept=".m4a,.mp3,.wav,.mp4,.webm,.mpga,.mpeg"
+        aria-label="音声ファイルを選択"
+      />
+      <div class="icon">🎙️</div>
+      <div class="msg">クリックまたはドラッグ＆ドロップでファイルを選択</div>
+      <div class="sub">
+        対応形式：m4a / mp3 / wav / mp4 ／
+        推奨：5MB以下／OpenAI上限：25MB。ただしNetlify Functionsの制限により、大きいファイルは失敗する場合があります。
+      </div>
+    </div>
+
+    <div id="file-selected">✅ <span id="file-name"></span>（<span id="file-size"></span>MB）</div>
+    <div id="warn-box">⚠️ ファイルサイズが5MBを超えています（<span id="warn-size"></span>MB）。Netlify Functionsのタイムアウトやリクエスト上限に達して失敗する可能性があります。まず短い音声でテストすることをお勧めします。</div>
+  </div>
+
+  <!-- ── セクション2：モデル選択・コスト ── -->
+  <div class="card">
+    <div class="card-title">2. モデルと概算コスト確認</div>
+
+    <label for="model-select">使用モデル</label>
+    <select id="model-select" aria-label="モデル選択">
+      <option value="gpt-4o-mini-transcribe" selected>
+        gpt-4o-mini-transcribe（低コスト・文字起こし精度優先／タイムコードは目安）
+      </option>
+      <option value="gpt-4o-transcribe">
+        gpt-4o-transcribe（高精度／タイムコードは目安）
+      </option>
+      <option value="whisper-1">
+        whisper-1（タイムコード精度優先）
+      </option>
+    </select>
+
+    <div class="info-grid">
+      <div class="info-item">
+        <div class="label">推定音声時間</div>
+        <div class="value" id="est-duration">――</div>
+      </div>
+      <div class="info-item">
+        <div class="label">選択モデル</div>
+        <div class="value" id="est-model">gpt-4o-mini</div>
+      </div>
+      <div class="info-item">
+        <div class="label">概算コスト目安</div>
+        <div class="value" id="est-cost">――</div>
+      </div>
+    </div>
+
+    <div class="cost-note">
+      ⚠️ 概算です。実際の料金は
+      <a href="https://openai.com/pricing" target="_blank" rel="noopener">OpenAIの最新料金ページ</a>
+      をご確認ください。<br>
+      ※ 音声時間はファイルサイズから推定した参考値です（形式・ビットレートにより変動します）。
+    </div>
+  </div>
+
+  <!-- ── セクション3：実行 ── -->
+  <div class="card">
+    <div class="card-title">3. 文字起こし実行</div>
+
+    <!-- エラー表示 -->
+    <div id="error-box" role="alert"></div>
+
+    <!-- 処理中表示 -->
+    <div id="loading">
+      <span class="spinner" aria-hidden="true"></span>
+      文字起こし中です。音声の長さによって時間がかかる場合があります。しばらくお待ちください。
+      <span class="elapsed" id="elapsed-time"></span>
+    </div>
+
+    <button class="btn btn-primary" id="run-btn" type="button">
+      🎙️ 文字起こしを開始する
+    </button>
+  </div>
+
+  <!-- ── セクション4：結果 ── -->
+  <div class="card" id="result-section">
+    <div class="card-title">4. 文字起こし結果</div>
+
+    <div class="result-header">
+      <div class="meta" id="result-meta"></div>
+      <div class="result-actions">
+        <button class="btn btn-secondary" id="copy-btn" type="button">📋 全文コピー</button>
+        <button class="btn btn-success" id="dl-btn" type="button">💾 txtで保存</button>
+      </div>
+    </div>
+
+    <span class="copy-feedback" id="copy-feedback">✅ コピーしました</span>
+
+    <textarea
+      id="result-textarea"
+      readonly
+      aria-label="文字起こし結果"
+      placeholder="ここに結果が表示されます"
+    ></textarea>
+
+    <div class="timestamp-note" id="timestamp-note">
+      📌 このタイムコードは推定です。gpt-4oシリーズはAPIの仕様上セグメント単位のタイムスタンプを取得できないため、音声時間を均等分割して算出しています。正確な発話位置に戻りたい場合は「whisper-1」を使用してください。
+    </div>
+  </div>
+
+  <!-- フッター -->
+  <footer>
+    AI文字起こし ／ Powered by OpenAI ／ 音声データはOpenAI APIに送信されます
+  </footer>
+
+</div><!-- /wrap -->
+
+<script>
+/* ============================================================
+   AI文字起こし - フロントエンドスクリプト
+
+   処理フロー:
+   1. ファイル選択 → 音声時間・コスト目安を表示
+   2. モデル選択
+   3. 「文字起こし開始」ボタン → Base64変換 → Functions呼び出し
+   4. 結果受信 → タイムコード付きテキスト表示
+   5. コピー / txtダウンロード
+
+   タイムコード付与ロジック:
+   - whisper-1: APIレスポンスの segments[].start を使用（最も正確）
+   - gpt-4o系: テキストを改行・句読点で分割し、
+     推定音声時間から按分して疑似タイムコードを付与
+
+   コスト計算（概算）:
+   - gpt-4o-mini-transcribe: $0.003/分
+   - gpt-4o-transcribe:      $0.006/分
+   - whisper-1:              $0.006/分
+   ※ 2025年時点の目安。最新料金はOpenAIの公式ページで確認すること。
+============================================================ */
+
+// ── 定数 ──────────────────────────────────────────────────────
+const FUNCTION_ENDPOINT  = '/.netlify/functions/transcribe';
+const WARN_FILE_SIZE_MB  = 5;   // 5MB超で警告
+const MAX_FILE_SIZE_MB   = 25;  // 25MB超で拒否
+
+// コスト目安（1分あたりのUSD）
+const COST_PER_MIN = {
+  'gpt-4o-mini-transcribe': 0.003,
+  'gpt-4o-transcribe':      0.006,
+  'whisper-1':              0.006,
+};
+
+// モデル略称（UI表示用）
+const MODEL_SHORT = {
+  'gpt-4o-mini-transcribe': 'gpt-4o-mini',
+  'gpt-4o-transcribe':      'gpt-4o',
+  'whisper-1':              'whisper-1',
+};
+
+// 音声ビットレート推定（kbps）- ファイルサイズ→時間の概算用
+const BITRATE_ESTIMATE = {
+  'm4a': 128, 'mp3': 128, 'wav': 1400,
+  'mp4': 128, 'webm': 96, 'mpga': 128, 'mpeg': 128,
+};
+
+// ── DOM参照 ───────────────────────────────────────────────────
+const fileInput      = document.getElementById('audio-file');
+const fileArea       = document.getElementById('file-area');
+const fileSelected   = document.getElementById('file-selected');
+const fileName       = document.getElementById('file-name');
+const fileSizeEl     = document.getElementById('file-size');
+const warnBox        = document.getElementById('warn-box');
+const warnSize       = document.getElementById('warn-size');
+const modelSelect    = document.getElementById('model-select');
+const estDuration    = document.getElementById('est-duration');
+const estModel       = document.getElementById('est-model');
+const estCost        = document.getElementById('est-cost');
+const runBtn         = document.getElementById('run-btn');
+const loadingEl      = document.getElementById('loading');
+const elapsedTime    = document.getElementById('elapsed-time');
+const errorBox       = document.getElementById('error-box');
+const resultSection  = document.getElementById('result-section');
+const resultTextarea = document.getElementById('result-textarea');
+const resultMeta     = document.getElementById('result-meta');
+const copyBtn        = document.getElementById('copy-btn');
+const copyFeedback   = document.getElementById('copy-feedback');
+const dlBtn          = document.getElementById('dl-btn');
+const timestampNote  = document.getElementById('timestamp-note');
+
+// ── 状態 ──────────────────────────────────────────────────────
+let selectedFile     = null;
+let elapsedTimer     = null;
+let elapsedSeconds   = 0;
+let estimatedMinutes = 0;
+
+// ── ユーティリティ ────────────────────────────────────────────
+
+function secondsToTimecode(totalSeconds) {
+  const h  = Math.floor(totalSeconds / 3600);
+  const m  = Math.floor((totalSeconds % 3600) / 60);
+  const s  = Math.floor(totalSeconds % 60);
+  const hh = String(h).padStart(2, '0');
+  const mm = String(m).padStart(2, '0');
+  const ss = String(s).padStart(2, '0');
+  return `${hh};${mm};${ss};00`;
+}
+
+function getExt(name) {
+  return (name.split('.').pop() || '').toLowerCase();
+}
+
+function estimateDuration(file) {
+  const ext     = getExt(file.name);
+  const kbps    = BITRATE_ESTIMATE[ext] || 128;
+  const sizeKb  = file.size / 1024;
+  const seconds = (sizeKb * 8) / kbps;
+  return Math.max(seconds / 60, 0.1);
+}
+
+function showError(msg) {
+  errorBox.textContent = msg;
+  errorBox.style.display = 'block';
+}
+
+function clearError() {
+  errorBox.textContent = '';
+  errorBox.style.display = 'none';
+}
+
+function updateCostEstimate() {
+  const model   = modelSelect.value;
+  const minutes = estimatedMinutes;
+
+  if (minutes <= 0) {
+    estDuration.textContent = '――';
+    estCost.textContent     = '――';
+    return;
+  }
+
+  const totalSec = minutes * 60;
+  const m = Math.floor(totalSec / 60);
+  const s = Math.floor(totalSec % 60);
+  estDuration.textContent = `約${m}分${s > 0 ? s + '秒' : ''}（目安）`;
+
+  const usdPerMin  = COST_PER_MIN[model] || 0.003;
+  const usdTotal   = usdPerMin * minutes;
+  const jpyTotal   = usdTotal * 145;
+  estCost.textContent = `¥${jpyTotal.toFixed(0)}前後（目安）`;
+}
+
+// ── ファイル選択処理 ──────────────────────────────────────────
+
+function handleFileSelect(file) {
+  if (!file) return;
+
+  const sizeMB = file.size / 1024 / 1024;
+
+  // 25MB超 → 拒否
+  if (sizeMB > MAX_FILE_SIZE_MB) {
+    showError(`ファイルサイズが大きすぎます（${sizeMB.toFixed(1)}MB）。OpenAI APIの上限は25MBです。\n音声を短く分割してから再度アップロードしてください。`);
+    warnBox.style.display = 'none';
+    return;
+  }
+
+  // 拡張子チェック
+  const ext = getExt(file.name);
+  const ok  = ['m4a','mp3','wav','mp4','webm','mpga','mpeg'].includes(ext);
+  if (!ok) {
+    showError(`対応していないファイル形式です（.${ext}）。m4a / mp3 / wav / mp4 をお使いください。`);
+    warnBox.style.display = 'none';
+    return;
+  }
+
+  clearError();
+  selectedFile = file;
+
+  fileName.textContent  = file.name;
+  fileSizeEl.textContent = sizeMB.toFixed(1);
+  fileSelected.style.display = 'block';
+
+  // 5MB超 → 警告（拒否はしない）
+  if (sizeMB > WARN_FILE_SIZE_MB) {
+    warnSize.textContent = sizeMB.toFixed(1);
+    warnBox.style.display = 'block';
+  } else {
+    warnBox.style.display = 'none';
+  }
+
+  estimatedMinutes = estimateDuration(file);
+  updateCostEstimate();
+}
+
+fileInput.addEventListener('change', (e) => {
+  handleFileSelect(e.target.files[0]);
+});
+
+fileArea.addEventListener('dragover', (e) => {
+  e.preventDefault();
+  fileArea.classList.add('drag-over');
+});
+fileArea.addEventListener('dragleave', () => fileArea.classList.remove('drag-over'));
+fileArea.addEventListener('drop', (e) => {
+  e.preventDefault();
+  fileArea.classList.remove('drag-over');
+  handleFileSelect(e.dataTransfer?.files[0]);
+});
+
+modelSelect.addEventListener('change', () => {
+  estModel.textContent = MODEL_SHORT[modelSelect.value] || modelSelect.value;
+  updateCostEstimate();
+});
+
+// ── タイムコード付きテキスト生成 ──────────────────────────────
+
+function formatWithWhisperSegments(segments) {
+  return segments.map((seg) => {
+    const tc   = secondsToTimecode(seg.start || 0);
+    const text = (seg.text || '').trim();
+    return `${tc}\n${text}`;
+  }).join('\n\n');
+}
+
+function formatWithPseudoTimecodes(text, estimatedTotalSec) {
+  if (!text) return '';
+
+  const rawSentences = text
+    .split(/(?<=[。！？\n])|(?<=[\r\n])/g)
+    .map(s => s.trim())
+    .filter(s => s.length > 0);
+
+  const sentences = rawSentences.length > 1
+    ? rawSentences
+    : splitByLength(text, 60);
+
+  const total = sentences.length;
+  const secPerSeg = estimatedTotalSec / Math.max(total, 1);
+
+  return sentences.map((sentence, i) => {
+    const startSec = Math.floor(i * secPerSeg);
+    const tc = secondsToTimecode(startSec);
+    return `${tc}\n${sentence}`;
+  }).join('\n\n');
+}
+
+function splitByLength(text, len) {
+  const result = [];
+  for (let i = 0; i < text.length; i += len) {
+    result.push(text.slice(i, i + len));
+  }
+  return result;
+}
+
+// ── 経過時間カウンター ─────────────────────────────────────────
+function startElapsed() {
+  elapsedSeconds = 0;
+  elapsedTime.textContent = '0秒経過';
+  elapsedTimer = setInterval(() => {
+    elapsedSeconds++;
+    elapsedTime.textContent = `${elapsedSeconds}秒経過`;
+  }, 1000);
+}
+
+function stopElapsed() {
+  if (elapsedTimer) {
+    clearInterval(elapsedTimer);
+    elapsedTimer = null;
+  }
+}
+
+// ── 文字起こし実行 ────────────────────────────────────────────
+runBtn.addEventListener('click', async () => {
+  clearError();
+
+  if (!selectedFile) {
+    showError('ファイルが選択されていません。音声ファイルを選択してから実行してください。');
+    return;
+  }
+
+  const model = modelSelect.value;
+
+  runBtn.disabled          = true;
+  loadingEl.style.display  = 'block';
+  resultSection.style.display = 'none';
+  startElapsed();
+
+  try {
+    const base64 = await fileToBase64(selectedFile);
+
+    const payload = {
+      audioBase64: base64,
+      mimeType:    selectedFile.type || guessMime(selectedFile.name),
+      fileName:    selectedFile.name,
+      model:       model,
+    };
+
+    let response;
+    try {
+      response = await fetch(FUNCTION_ENDPOINT, {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify(payload),
+      });
+    } catch (networkErr) {
+      throw new Error('サーバーへの接続に失敗しました。インターネット接続を確認してください。');
+    }
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.error || `サーバーエラーが発生しました（${response.status}）`);
+    }
+
+    let formattedText = '';
+    let usedPseudo    = false;
+
+    if (data.hasTimestamps && data.segments?.length > 0) {
+      formattedText = formatWithWhisperSegments(data.segments);
+    } else {
+      const estSec = estimatedMinutes * 60;
+      formattedText = formatWithPseudoTimecodes(data.text || '', estSec);
+      usedPseudo    = true;
+    }
+
+    const charCount   = (data.text || '').length;
+    const apiDuration = data.estimatedDuration
+      ? `APIレポート ${Math.round(data.estimatedDuration)}秒 /`
+      : '';
+    const modelLabel  = MODEL_SHORT[data.model] || data.model;
+
+    resultMeta.textContent =
+      `モデル: ${modelLabel} ／ ${apiDuration} 文字数: ${charCount.toLocaleString()}文字 ／ 処理時間: ${elapsedSeconds}秒`;
+
+    resultTextarea.value        = formattedText;
+    resultSection.style.display = 'block';
+
+    // gpt-4o系の場合は疑似タイムコード注記を表示
+    timestampNote.style.display = usedPseudo ? 'block' : 'none';
+
+    resultSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+  } catch (err) {
+    showError(err.message || '文字起こしに失敗しました。');
+    resultSection.style.display = 'none';
+  } finally {
+    stopElapsed();
+    runBtn.disabled         = false;
+    loadingEl.style.display = 'none';
+  }
+});
+
+// ── コピーボタン ──────────────────────────────────────────────
+copyBtn.addEventListener('click', async () => {
+  const text = resultTextarea.value;
+  if (!text) return;
+
+  try {
+    await navigator.clipboard.writeText(text);
+    copyFeedback.style.display = 'inline';
+    setTimeout(() => { copyFeedback.style.display = 'none'; }, 2000);
+  } catch {
+    resultTextarea.select();
+    document.execCommand('copy');
+    copyFeedback.style.display = 'inline';
+    setTimeout(() => { copyFeedback.style.display = 'none'; }, 2000);
+  }
+});
+
+// ── ダウンロードボタン ────────────────────────────────────────
+dlBtn.addEventListener('click', () => {
+  const text = resultTextarea.value;
+  if (!text) return;
+
+  const baseName = selectedFile
+    ? selectedFile.name.replace(/\.[^.]+$/, '')
+    : 'transcription';
+  const outName = `${baseName}_文字起こし.txt`;
+
+  const blob = new Blob([text], { type: 'text/plain;charset=utf-8' });
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href     = url;
+  a.download = outName;
+  a.click();
+  URL.revokeObjectURL(url);
+});
+
+// ── ヘルパー：File → Base64 ───────────────────────────────────
+function fileToBase64(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload  = () => {
+      const base64 = reader.result.split(',')[1];
+      resolve(base64);
+    };
+    reader.onerror = () => reject(new Error('ファイルの読み込みに失敗しました。'));
+    reader.readAsDataURL(file);
+  });
+}
+
+// ── ヘルパー：MIMEタイプの推定 ───────────────────────────────
+function guessMime(name) {
+  const ext = getExt(name);
+  const map = {
+    'm4a': 'audio/m4a', 'mp3': 'audio/mpeg', 'wav': 'audio/wav',
+    'mp4': 'video/mp4', 'webm': 'audio/webm', 'mpga': 'audio/mpga',
+    'mpeg': 'audio/mpeg',
+  };
+  return map[ext] || 'audio/mpeg';
+}
+
+// ── 初期表示 ──────────────────────────────────────────────────
+estModel.textContent = MODEL_SHORT[modelSelect.value] || modelSelect.value;
+</script>
+
+</body>
+</html>
